@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <title>key counter, requires 10 ms update rate</title>
+</head>
+
+<body>
+    <div id="taps">
+        <div id="kps">
+            <div class="tappingdata" id="currentkps">0</div>
+            <div class="tappingdata" id="currentkps_desc"> KPS</div>
+        </div>
+    
+        <div id="bpm">
+            <div class="tappingdata" id="currentbpm">0</div>
+            <div class="tappingdata" id="currentbpm_desc"> BPM</div>
+        </div>
+    </div>
+
+    <script src="deps/countUp.js"></script>
+    <script src="deps/reconnecting-websocket.min.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>

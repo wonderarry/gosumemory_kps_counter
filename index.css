@@ -1,0 +1,22 @@
+@font-face {
+    font-family: "Photographs";
+    src: url("deps/Photographs.ttf");
+  }
+
+
+.tappingdata{
+  display: inline;
+  font-family: "Photographs";
+  letter-spacing: 1px;
+  font-size: 28px;
+  color: white;
+}
+
+#taps{
+  transition: 300ms ease-in-out;
+  height: 250px;
+  width: 150px;
+  background-color: black;
+  text-align:right;
+  padding-right: 5px;
+}

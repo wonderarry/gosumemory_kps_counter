@@ -19,97 +19,75 @@ socket.onerror = error => {
 };
 
 
-let tempState;
-let key1state;
-let key2state;
+let tempState = -2;
+let key1state = 0;
+let key2state = 0;
 
 
 
 let animation = {
-    kps_storage: new CountUp('currentkps', 0, 0, 0, 0.25, { decimalPlaces: 0, useEasing: true, useGrouping: false, separator: " ", decimal: "." }),
-    //presses_storage: new CountUp('totalpresses', 0, 0, 0, 0.25, { decimalPlaces: 0, useEasing: true, useGrouping: false, separator: " ", decimal: "." }),
-    bpm_storage: new CountUp('currentbpm', 0, 0, 0, 0.2, { decimalPlaces: 0, useEasing: true, useGrouping: false, separator: " ", decimal: "." }),
+    kps_storage: new CountUp('currentkps', 0, 0, 0, 0.3, { decimalPlaces: 0, useEasing: true, useGrouping: false, separator: " ", decimal: "." }),
+    bpm_storage: new CountUp('currentbpm', 0, 0, 0, 0.3, { decimalPlaces: 0, useEasing: true, useGrouping: false, separator: " ", decimal: "." }),
 }
-
 
 
 let tapsQueue = [];
+let actualFrametimeMilliseconds = 15.25; //experimental measurement, may vary based on system
+tapsQueue.length = Math.floor(1000 / actualFrametimeMilliseconds);
+tapsQueue.fill(0);
 
 let kps = 0;
-let changeStorage;
-let prevTime = window.performance.now();
-let avgtime;
-let firstframescounter = 0;
-let testframecount = 500;
-let kps_bpm_refresh_cap = 1;
-let kps_bpm_refresh_counter = 0;
+let tapsCounter = 0;
+
+let itercount = 0;
+let maxiter = 5;
 
 socket.onmessage = event => {
     let data = JSON.parse(event.data);
-    if (firstframescounter < testframecount){
-        firstframescounter += 1; 
-        if (firstframescounter == testframecount){
-            avgtime = Math.floor((window.performance.now() - prevTime) / testframecount) + 0.25;
-            queueMaxSize = Math.floor(1000 / avgtime);
-            tapsQueue.length = queueMaxSize;
-            tapsQueue.fill(0);
-            //presses_storage.innerText = 0;
+    if (tempState !== data.menu.state){ // switched to a new state
+        tempState = data.menu.state;
+        
+        if (tempState == 2){ // playing
+            tapsdiv.style.opacity = 1;
         }
         else{
-            kps_storage.innerText = "Setting up...";
-            //presses_storage.innerText = "Please wait...";
-            bpm_storage.innerText = "Please wait...";
+            tapsdiv.style.opacity = 0;
+            key1state = 0;
+            key2state = 1;
+            tapsQueue.fill(0);
         }
     }
-    else{
-        let data = JSON.parse(event.data);
-        if (tempState !== data.menu.state){
-            tempState = data.menu.state;
-
-            if (tempState == 2){
-                tapsdiv.style.opacity = 1;
-            }
-            else{
-                tapsdiv.style.opacity = 0;
-                key1state = 0;
-                key2state = 0;
-            }
+    tapsCounter = 0;
+    if (tempState == 2){
+        if (key1state == 0 && data.gameplay.keyOverlay.k1.isPressed){ //a new tap that was unaccounted for
+            key1state = 1;
+            tapsCounter += 1;
         }
-        changeStorage = 0;
-        if (data.menu.state == 2){
-            if (data.gameplay.keyOverlay.k1.isPressed && key1state == 0){
-                key1state = 1;
-                changeStorage += 1;
-            }
-            else if (!(data.gameplay.keyOverlay.k1.isPressed) && key1state == 1){
-                key1state = 0;
-            }
-
-            if (data.gameplay.keyOverlay.k2.isPressed && key2state == 0){
-                key2state = 1;
-                changeStorage += 1;
-            }
-            else if (!(data.gameplay.keyOverlay.k2.isPressed) && key2state == 1){
-                key2state = 0;
-            }
+        else if (key1state == 1 && !(data.gameplay.keyOverlay.k1.isPressed)){ // key was released this frame
+            key1state = 0;
         }
-        tapsQueue.push(changeStorage);
-        kps += changeStorage;
-        kps -= tapsQueue.shift();
 
-        /*
-        if (data.menu.state == 2){
-            animation.presses_storage.update(parseInt(presses_storage.innerText) + changeStorage);
+        if (key2state == 0 && data.gameplay.keyOverlay.k2.isPressed){ //a new tap that was unaccounted for
+            key2state = 1;
+            tapsCounter += 1;
         }
-        */
-
-        kps_bpm_refresh_counter += 1;
-        if (kps_bpm_refresh_counter == kps_bpm_refresh_cap){
-            animation.kps_storage.update(kps);
-            animation.bpm_storage.update(Math.floor(kps * 60 / 4));
-            kps_bpm_refresh_counter = 0;
-        }
+        else if (key2state == 1 && !(data.gameplay.keyOverlay.k2.isPressed)){ // key was released this frame
+            key2state = 0;
+        } 
     }
+
+    tapsQueue.push(tapsCounter);
+    kps += tapsCounter;
+    kps -= tapsQueue.shift();
+
+    itercount += 1;
+    if (itercount == maxiter){
+        itercount = 0;
+        animation.kps_storage.update(kps);
+        animation.bpm_storage.update(Math.floor(kps * 60 / 4));       
+    }
+
+
+
 }
-
 
